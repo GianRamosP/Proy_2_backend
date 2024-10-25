@@ -22,14 +22,17 @@ const registerUser = async (req, res) => {
       userId: newUserId,
       name,
       email,
-      password,
+      password: await bcrypt.hash(password, 10), // Hash de la contraseña
     });
 
     // Guardar el usuario en la base de datos
     const savedUser = await user.save();
     res.status(201).json(savedUser); // Retornar el usuario creado
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error("Error al registrar usuario:", error);
+    res
+      .status(500)
+      .json({ message: "Error en el servidor", error: error.message });
   }
 };
 
@@ -58,7 +61,9 @@ const loginUser = async (req, res) => {
     res.json({ token, user });
   } catch (error) {
     console.error("Error en el login:", error);
-    res.status(500).json({ message: error.message });
+    res
+      .status(500)
+      .json({ message: "Error en el servidor", error: error.message });
   }
 };
 
