@@ -20,10 +20,10 @@ app.use(express.static("public"));
 app.use(express.json());
 
 // Usa las rutas
+app.use("/api/auth", authRoutes);
 app.use("/api", userRoutes);
 app.use("/api", dietRoutes);
 app.use("/api", routineRoutes);
-app.use("/api", authRoutes); // Agrega esta línea
 
 const PORT = process.env.PORT || 3001;
 

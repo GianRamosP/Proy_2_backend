@@ -4,32 +4,70 @@ const jwt = require("jsonwebtoken");
 
 // Registrar usuario
 const registerUser = async (req, res) => {
-  const { name, email, password } = req.body;
+  const { name, email, password, role } = req.body; // Asegúrate de que 'role' está incluido si es necesario
 
   try {
-    // Verificar si el usuario ya existe
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ message: "El usuario ya existe" });
     }
 
-    // Obtener el último usuario registrado para generar el siguiente userId
     const lastUser = await User.findOne().sort({ userId: -1 });
-    const newUserId = lastUser ? lastUser.userId + 1 : 1; // Incrementar el último userId o empezar desde 1
+    const newUserId = (lastUser ? lastUser.userId : 0) + 1;
 
-    // Crear nuevo usuario
     const user = new User({
       userId: newUserId,
       name,
       email,
-      password: await bcrypt.hash(password, 10), // Hash de la contraseña
+      password: await bcrypt.hash(password, 10),
+      role, // Incluye el rol si es necesario
     });
 
-    // Guardar el usuario en la base de datos
     const savedUser = await user.save();
-    res.status(201).json(savedUser); // Retornar el usuario creado
+    res.status(201).json(savedUser);
   } catch (error) {
     console.error("Error al registrar usuario:", error);
+    if (error.code === 11000) {
+      return res.status(400).json({ message: "El usuario ya existe" });
+    }
+    res
+      .status(500)
+      .json({ message: "Error en el servidor", error: error.message });
+  }
+};
+
+// Crear usuario desde el panel de administrador
+const createUserAsAdmin = async (req, res) => {
+  const { name, email, password, role } = req.body;
+
+  try {
+    // Verificar si el usuario que hace la solicitud es administrador
+    const adminUser = await User.findById(req.userId);
+    if (adminUser.role !== "admin") {
+      return res.status(403).json({ message: "Acceso denegado" });
+    }
+
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: "El usuario ya existe" });
+    }
+
+    // Generar un nuevo userId si es necesario
+    const lastUser = await User.findOne().sort({ userId: -1 });
+    const newUserId = (lastUser ? lastUser.userId : 0) + 1;
+
+    const user = new User({
+      userId: newUserId,
+      name,
+      email,
+      password: await bcrypt.hash(password, 10),
+      role, // Definir el rol del usuario
+    });
+
+    const savedUser = await user.save();
+    res.status(201).json(savedUser);
+  } catch (error) {
+    console.error("Error al crear usuario como administrador:", error);
     res
       .status(500)
       .json({ message: "Error en el servidor", error: error.message });
@@ -67,4 +105,4 @@ const loginUser = async (req, res) => {
   }
 };
 
-module.exports = { registerUser, loginUser };
+module.exports = { registerUser, loginUser, createUserAsAdmin };
