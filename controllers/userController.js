@@ -16,7 +16,7 @@ const registerUser = async (req, res) => {
     const user = new User({
       name,
       email,
-      password: hashedPassword,
+      password,
       role,
     });
     console.log("Hash de la contraseña almacenada:", user.password);
@@ -51,7 +51,7 @@ const createUserAsAdmin = async (req, res) => {
     const user = new User({
       name,
       email,
-      password: await bcrypt.hash(password, 10),
+      password,
       role,
     });
 
