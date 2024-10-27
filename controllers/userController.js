@@ -1,28 +1,25 @@
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const { check, validationResult } = require("express-validator");
 
 // Registrar usuario
 const registerUser = async (req, res) => {
-  const { name, email, password, role } = req.body; // Asegúrate de que 'role' está incluido si es necesario
-
+  const { name, email, password, role } = req.body;
   try {
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ message: "El usuario ya existe" });
     }
-
-    const lastUser = await User.findOne().sort({ userId: -1 });
-    const newUserId = (lastUser ? lastUser.userId : 0) + 1;
-
+    const hashedPassword = await bcrypt.hash(password, 10);
+    console.log("Hash de la contraseña almacenada:", hashedPassword);
     const user = new User({
-      userId: newUserId,
       name,
       email,
-      password: await bcrypt.hash(password, 10),
-      role, // Incluye el rol si es necesario
+      password: hashedPassword,
+      role,
     });
-
+    console.log("Hash de la contraseña almacenada:", user.password);
     const savedUser = await user.save();
     res.status(201).json(savedUser);
   } catch (error) {
@@ -41,8 +38,7 @@ const createUserAsAdmin = async (req, res) => {
   const { name, email, password, role } = req.body;
 
   try {
-    // Verificar si el usuario que hace la solicitud es administrador
-    const adminUser = await User.findById(req.userId);
+    const adminUser = await User.findById(req._id);
     if (adminUser.role !== "admin") {
       return res.status(403).json({ message: "Acceso denegado" });
     }
@@ -52,16 +48,11 @@ const createUserAsAdmin = async (req, res) => {
       return res.status(400).json({ message: "El usuario ya existe" });
     }
 
-    // Generar un nuevo userId si es necesario
-    const lastUser = await User.findOne().sort({ userId: -1 });
-    const newUserId = (lastUser ? lastUser.userId : 0) + 1;
-
     const user = new User({
-      userId: newUserId,
       name,
       email,
       password: await bcrypt.hash(password, 10),
-      role, // Definir el rol del usuario
+      role,
     });
 
     const savedUser = await user.save();
@@ -76,22 +67,34 @@ const createUserAsAdmin = async (req, res) => {
 
 // Login de usuario
 const loginUser = async (req, res) => {
+  await check("email", "El correo electrónico es inválido").isEmail().run(req);
+  await check("password", "La contraseña es requerida").notEmpty().run(req);
+
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
   const { email, password } = req.body;
 
   try {
-    // Buscar usuario por email
-    const user = await User.findOne({ email });
+    console.log("Email:", email);
+    console.log("Password:", password);
+
+    const user = await User.findOne({ email: email });
     if (!user) {
       return res.status(404).json({ message: "Usuario no encontrado" });
     }
 
-    // Comparar la contraseña
+    console.log("Contraseña ingresada:", password);
+    console.log("Hash de la base de datos:", user.password);
+
     const isMatch = await bcrypt.compare(password, user.password);
+    console.log("¿Las contraseñas coinciden?", isMatch);
     if (!isMatch) {
       return res.status(400).json({ message: "Contraseña incorrecta" });
     }
 
-    // Crear token JWT
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
       expiresIn: "1h",
     });

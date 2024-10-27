@@ -4,10 +4,10 @@ const router = express.Router();
 const User = require("../models/User");
 const { registerUser, loginUser } = require("../controllers/userController");
 const { protect, verifyRole } = require("../middleware/authMiddleware");
+const { check } = require("express-validator");
 
-// Ruta users
+// Route to get all users
 router.get("/users", protect, verifyRole("admin"), async (req, res) => {
-  // router.get("/users", async (req, res) => {
   try {
     const users = await User.find();
     res.json(users);
@@ -16,11 +16,9 @@ router.get("/users", protect, verifyRole("admin"), async (req, res) => {
   }
 });
 
-// Ruta users id
-router.get("/users/:userId", protect, async (req, res) => {
-  // router.get("/users/:userId", async (req, res) => {
+router.get("/users/me", protect, async (req, res) => {
   try {
-    const user = await User.findById(req.params.userId);
+    const user = await User.findById(req._id);
     if (!user) {
       return res.status(404).json({ message: "Usuario no encontrado" });
     }
@@ -30,17 +28,26 @@ router.get("/users/:userId", protect, async (req, res) => {
   }
 });
 
-// Ruta no protegida registro
+// Unprotected route for registration
 router.post("/register", registerUser);
 
-// Ruta login no protegida
-router.post("/login", loginUser);
+// Unprotected route for login
+// router.post("/login", loginUser);
+router.post(
+  "/login",
+  [
+    check("email").isEmail().withMessage("El correo electrónico es inválido"),
+    check("password").notEmpty().withMessage("La contraseña es requerida"),
+  ],
+  loginUser
+);
 
+// Admin access route
 router.get("/admin", protect, verifyRole("admin"), (req, res) => {
   res.json({ message: "Acceso concedido al admin" });
 });
 
-// Crear usuarios protegida
+// Protected route to create users
 router.post("/admin/users", protect, verifyRole("admin"), async (req, res) => {
   try {
     const newUser = new User(req.body);
@@ -51,18 +58,15 @@ router.post("/admin/users", protect, verifyRole("admin"), async (req, res) => {
   }
 });
 
-// Update protegida
 router.put(
-  "/admin/users/:userId",
+  "/admin/users/me",
   protect,
   verifyRole("admin"),
   async (req, res) => {
     try {
-      const updatedUser = await User.findByIdAndUpdate(
-        req.params.userId,
-        req.body,
-        { new: true }
-      );
+      const updatedUser = await User.findByIdAndUpdate(req._id, req.body, {
+        new: true,
+      });
       if (!updatedUser) {
         return res.status(404).json({ message: "Usuario no encontrado" });
       }
@@ -73,14 +77,13 @@ router.put(
   }
 );
 
-// Eliminacino protegida
 router.delete(
-  "/admin/users/:userId",
+  "/admin/users/me",
   protect,
   verifyRole("admin"),
   async (req, res) => {
     try {
-      const user = await User.findByIdAndDelete(req.params.userId);
+      const user = await User.findByIdAndDelete(req._id);
       if (!user) {
         return res.status(404).json({ message: "Usuario no encontrado" });
       }

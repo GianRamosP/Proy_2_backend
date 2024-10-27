@@ -1,18 +1,18 @@
-// routes/authRoutes.js (o el archivo donde tengas el endpoint)
+// routes/authRoutes.js
 
 const express = require("express");
-const { verifyToken } = require("../middleware/auth"); // Asegúrate de que el path sea correcto
+const { verifyToken } = require("../middleware/auth"); // Ensure the path is correct
 const User = require("../models/User");
 
 const router = express.Router();
 
 router.get("/me", verifyToken, async (req, res) => {
   try {
-    const user = await User.findById(req.userId); // Busca el usuario por ID
+    const user = await User.findById(req._id); // Fetch the user by ID from the token
     if (!user) {
       return res.status(404).json({ message: "Usuario no encontrado" });
     }
-    res.json(user); // Envía la información del usuario
+    res.json(user); // Send back the user's information
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
