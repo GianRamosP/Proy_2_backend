@@ -108,4 +108,24 @@ const loginUser = async (req, res) => {
   }
 };
 
-module.exports = { registerUser, loginUser, createUserAsAdmin };
+// Eliminar usuario
+// Eliminar usuario por ID
+const deleteUser = async (req, res) => {
+  try {
+    const userId = req.params.id; // Obtenemos el ID del usuario desde los parámetros de la URL
+    const deletedUser = await User.findByIdAndDelete(userId); // Eliminamos el usuario por su ID
+
+    if (!deletedUser) {
+      return res.status(404).json({ message: "Usuario no encontrado" });
+    }
+
+    res.status(200).json({ message: "Usuario eliminado correctamente" });
+  } catch (error) {
+    console.error("Error al eliminar el usuario:", error);
+    res
+      .status(500)
+      .json({ message: "Error en el servidor", error: error.message });
+  }
+};
+
+module.exports = { registerUser, loginUser, createUserAsAdmin, deleteUser };
