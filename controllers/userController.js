@@ -33,7 +33,6 @@ const registerUser = async (req, res) => {
   }
 };
 
-// Crear usuario desde el panel de administrador
 const createUserAsAdmin = async (req, res) => {
   const { name, email, password, role } = req.body;
 
@@ -108,12 +107,10 @@ const loginUser = async (req, res) => {
   }
 };
 
-// Eliminar usuario
-// Eliminar usuario por ID
 const deleteUser = async (req, res) => {
   try {
-    const userId = req.params.id; // Obtenemos el ID del usuario desde los parámetros de la URL
-    const deletedUser = await User.findByIdAndDelete(userId); // Eliminamos el usuario por su ID
+    const userId = req.params.id;
+    const deletedUser = await User.findByIdAndDelete(userId);
 
     if (!deletedUser) {
       return res.status(404).json({ message: "Usuario no encontrado" });
