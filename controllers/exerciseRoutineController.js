@@ -16,7 +16,7 @@ const addExerciseRoutine = async (req, res) => {
 };
 
 const getUserExerciseRoutines = async (req, res) => {
-  const { userId } = req.params; // Asegúrate de que userId esté en los params
+  const { userId } = req.params;
   try {
     const routines = await ExerciseRoutine.find({ user: userId }); //
     res.status(200).json(routines);

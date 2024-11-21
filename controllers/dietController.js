@@ -1,39 +1,81 @@
+// controllers/dietController.js
 const Diet = require("../models/Diet");
 
-// Crear nueva dieta
-const createDiet = async (req, res) => {
-  const { name, items } = req.body;
-  const diet = new Diet({ name, items, user: req.user._id });
-  await diet.save();
-  res.status(201).json(diet);
+const addDiet = async (req, res) => {
+  const { user, foodName, calories, description } = req.body;
+
+  try {
+    const diet = new Diet({ user, foodName, calories, description });
+    await diet.save();
+    res.status(201).json(diet);
+  } catch (error) {
+    res.status(500).json({
+      message: "Error al crear la dieta",
+      error: error.message,
+    });
+  }
 };
 
-// Obtener todas las dietas de un usuario
-const getDiets = async (req, res) => {
-  const diets = await Diet.find({ user: req.user._id });
-  res.json(diets);
+const getUserDiets = async (req, res) => {
+  const { userId } = req.params;
+  try {
+    const diets = await Diet.find({ user: userId });
+    res.status(200).json(diets);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching diets", error });
+  }
 };
 
-// Actualizar dieta
+const getAllDiets = async (req, res) => {
+  try {
+    const diets = await Diet.find();
+    res.status(200).json(diets);
+  } catch (error) {
+    res.status(500).json({
+      message: "Error al obtener las dietas",
+      error: error.message,
+    });
+  }
+};
+
 const updateDiet = async (req, res) => {
-  const diet = await Diet.findById(req.params.id);
-  if (diet.user.toString() !== req.user._id.toString()) {
-    return res.status(401).json({ message: "Not authorized" });
+  try {
+    const { id } = req.params;
+    const updatedDiet = await Diet.findByIdAndUpdate(id, req.body, {
+      new: true,
+    });
+
+    if (!updatedDiet) {
+      return res.status(404).json({ message: "Dieta no encontrada" });
+    }
+    res.status(200).json(updatedDiet);
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error en el servidor", error: error.message });
   }
-  diet.name = req.body.name || diet.name;
-  diet.items = req.body.items || diet.items;
-  await diet.save();
-  res.json(diet);
 };
 
-// Eliminar dieta
 const deleteDiet = async (req, res) => {
-  const diet = await Diet.findById(req.params.id);
-  if (diet.user.toString() !== req.user._id.toString()) {
-    return res.status(401).json({ message: "Not authorized" });
+  try {
+    const { id } = req.params;
+    const deletedDiet = await Diet.findByIdAndDelete(id);
+
+    if (!deletedDiet) {
+      return res.status(404).json({ message: "Dieta no encontrada" });
+    }
+    res.status(200).json({ message: "Dieta eliminada correctamente" });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error en el servidor", error: error.message });
   }
-  await diet.remove();
-  res.json({ message: "Diet removed" });
 };
 
-module.exports = { createDiet, getDiets, updateDiet, deleteDiet };
+module.exports = {
+  addDiet,
+  getUserDiets,
+  getAllDiets,
+  updateDiet,
+  deleteDiet,
+};
