@@ -1,10 +1,15 @@
 const ExerciseRoutine = require("../models/ExerciseRoutine");
 
 const addExerciseRoutine = async (req, res) => {
-  const { user, exerciseName, description } = req.body;
+  const { user, exerciseName, description, videoLink } = req.body;
 
   try {
-    const routine = new ExerciseRoutine({ user, exerciseName, description });
+    const routine = new ExerciseRoutine({
+      user,
+      exerciseName,
+      description,
+      videoLink,
+    });
     await routine.save();
     res.status(201).json(routine);
   } catch (error) {
