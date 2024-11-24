@@ -1,4 +1,3 @@
-// routes/userRoutes.js
 const express = require("express");
 const router = express.Router();
 const User = require("../models/User");
@@ -6,6 +5,8 @@ const {
   registerUser,
   loginUser,
   deleteUser,
+  getTotalUsers,
+  getUserDetails,
 } = require("../controllers/userController");
 const { protect, verifyRole } = require("../middleware/authMiddleware");
 const { check } = require("express-validator");
@@ -32,13 +33,19 @@ router.get("/users/me", protect, async (req, res) => {
   }
 });
 
+// Route to get total users
+router.get("/total-users", protect, getTotalUsers);
+
+// Route to get user details by ID
+router.get("/user-details/:userId", protect, getUserDetails);
+
 // Unprotected route for registration
 router.post("/register", registerUser);
+
 // Ruta para eliminar un usuario por ID (solo accesible por el admin)
 router.delete("/users/:id", protect, verifyRole("admin"), deleteUser);
 
 // Unprotected route for login
-// router.post("/login", loginUser);
 router.post(
   "/login",
   [

@@ -1,4 +1,6 @@
 const User = require("../models/User");
+const ExerciseRoutine = require("../models/ExerciseRoutine");
+const Diet = require("../models/Diet");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { check, validationResult } = require("express-validator");
@@ -125,4 +127,41 @@ const deleteUser = async (req, res) => {
   }
 };
 
-module.exports = { registerUser, loginUser, createUserAsAdmin, deleteUser };
+// Nuevo: Obtener cantidad total de usuarios
+const getTotalUsers = async (req, res) => {
+  try {
+    const totalUsers = await User.countDocuments();
+    res.status(200).json({ totalUsers });
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching total users", error });
+  }
+};
+
+// Nuevo: Obtener detalles de usuario específico
+const getUserDetails = async (req, res) => {
+  const { userId } = req.params;
+  try {
+    const user = await User.findById(userId);
+    const exercisesCount = await ExerciseRoutine.countDocuments({
+      user: userId,
+    });
+    const dietsCount = await Diet.countDocuments({ user: userId });
+
+    res.status(200).json({
+      user: user.name,
+      exercisesCount,
+      dietsCount,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching user details", error });
+  }
+};
+
+module.exports = {
+  registerUser,
+  loginUser,
+  createUserAsAdmin,
+  deleteUser,
+  getTotalUsers,
+  getUserDetails,
+};
